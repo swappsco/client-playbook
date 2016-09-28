@@ -1,0 +1,12 @@
+---
+system_requirements:
+# Misc
+- curl
+- build-essential
+- libssl-dev
+
+# Git
+- git
+
+# Nginx
+- nginx
