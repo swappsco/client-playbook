@@ -52,16 +52,6 @@
         version: "{{ repo_tag }}"
         force: yes
         update: yes
-      notify:
-        - Install npm requirements
-        - Trigger build
-
-    - name: Copy app
-      command: bash -lc "cp -r /home/ubuntu/source_repo/dist/* /usr/share/nginx/html/"
-      become: yes
-
-
-  handlers:
 
     - name: Install npm requirements
       command: bash -lc "npm install"
@@ -73,3 +63,6 @@
       args:
         chdir: /home/ubuntu/source_repo
 
+    - name: Copy app
+      command: bash -lc "cp -r /home/ubuntu/source_repo/dist/* /usr/share/nginx/html/"
+      become: yes
