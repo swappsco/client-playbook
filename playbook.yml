@@ -45,7 +45,7 @@
       command: bash -lc "nvm install 6.6.0"
 
     - name: Install yarn
-      command: bash -lc "npm install -g yarn"
+      command: bash -lc "npm install -g yarn@0.17.8"
 
     - name: Install bower
       command: bash -lc "npm install -g bower"
