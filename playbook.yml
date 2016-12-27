@@ -60,8 +60,13 @@
         force: yes
         update: yes
 
-    - name: Install npm requirements
-      command: bash -lc "yarn"
+    #- name: Install npm requirements
+    #  command: bash -lc "yarn"
+    #  args:
+    #    chdir: "/home/ubuntu/{{ app_name }}"
+
+    - name: Install npm requirements(until yarn is stable)
+      command: bash -lc "npm install"
       args:
         chdir: "/home/ubuntu/{{ app_name }}"
 
