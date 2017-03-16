@@ -40,9 +40,8 @@
         line: "source ~/.nvm/nvm.sh"
         create: yes
 
-
     - name: Install node  
-      command: bash -lc "nvm install 6.6.0"
+      command: bash -lc "nvm install 7"
 
     # - name: Install yarn
     #   command: bash -lc "npm install -g yarn@0.18.1"
