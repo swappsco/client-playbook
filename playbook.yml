@@ -64,10 +64,10 @@
     #  args:
     #    chdir: "/home/ubuntu/{{ app_name }}"
 
-    - name: Install npm requirements(until yarn is stable)
-      command: bash -lc "npm install"
-      args:
-        chdir: "/home/ubuntu/{{ app_name }}"
+    # - name: Install npm requirements(until yarn is stable)
+    #   command: bash -lc "npm install"
+    #   args:
+    #     chdir: "/home/ubuntu/{{ app_name }}"
 
     # - name: Check that bower.json exists
     #   stat:
@@ -80,10 +80,10 @@
     #     chdir: "/home/ubuntu/{{ app_name }}"
     #   when: bower_stats.stat.exists == True
 
-    - name: Trigger build
-      command: bash -lc "npm run-script prepare-to-deploy"
-      args:
-        chdir: "/home/ubuntu/{{ app_name }}"
+    # - name: Trigger build
+    #   command: bash -lc "npm run-script prepare-to-deploy"
+    #   args:
+    #     chdir: "/home/ubuntu/{{ app_name }}"
 
     - name: Copy SSL files
       become: yes
