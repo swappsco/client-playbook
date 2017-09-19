@@ -1,0 +1,38 @@
+---
+- name: Read possible certificate file
+  stat: path=/etc/letsencrypt/live/{{ server_name }}/cert.pem
+  become: yes
+  register: letsencrypt_certificate
+  tags:
+    - ssl
+
+- name: Download cert-bot (letsencrypt)
+  get_url:
+    url: https://dl.eff.org/certbot-auto
+    dest: /srv/apps/certbot-auto
+  when: not letsencrypt_certificate.stat.exists
+  tags:
+    - ssl
+
+- name: Update cert-bot (letsencrypt) permissions
+  file:
+    path: /srv/apps/certbot-auto
+    state: file
+    mode: "a+x"
+  when: not letsencrypt_certificate.stat.exists
+  tags:
+    - ssl
+
+- name: Run cert-bot (letsencrypt) for server_name
+  become: yes
+  shell: /srv/apps/certbot-auto certonly --text -n --no-self-upgrade -m devops@swapps.io --domains {{ server_name }} --agree-tos --webroot --webroot-path /var/www/html/ 2>&1
+  when: ssl_domains_expand is undefined
+  tags:
+    - ssl
+
+- name: Run cert-bot (letsencrypt) for ssl_domains_expand
+  become: yes
+  shell: /srv/apps/certbot-auto certonly --text -n --no-self-upgrade -m devops@swapps.io --domains {{ server_name }},{{ ssl_domains_expand }} --agree-tos --expand --webroot --webroot-path /var/www/html/ 2>&1
+  when: ssl_domains_expand is defined
+  tags:
+    - ssl

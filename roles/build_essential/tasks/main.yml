@@ -1,0 +1,15 @@
+---
+- name: Update apt cache if needed
+  become: yes
+  apt: update_cache=yes cache_valid_time=86400
+- name: Verify that the deployment key is present
+  copy:
+    src: ~/.ssh/deployment
+    dest: /home/ubuntu/.ssh/deployment
+    mode: 0400
+- include_vars: system_requirements.yml
+
+- name: Install system packages
+  become: yes
+  apt: name={{ item }} state=present
+  with_items: "{{ system_requirements }}"
