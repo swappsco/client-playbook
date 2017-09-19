@@ -66,23 +66,10 @@ server {
     listen 80;
     access_log /var/log/nginx/{{ app_name }}.access.log;
     error_log /var/log/nginx/{{ app_name }}.error.log;
-    location / {
-    {% if use_daphne is defined and use_daphne==true %}
-        proxy_pass http://unix:/tmp/{{ app_name }}.sock:/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-
-        proxy_redirect     off;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Host $server_name;
-    {% else %} 
+    location / { 
         uwsgi_pass  unix:///tmp/{{ app_name }}.sock;
         include     uwsgi_params;
         {% if nginx_timeout is defined %}uwsgi_read_timeout  {{ nginx_timeout }};{% endif %}
-    {% endif %}
     }
     {% if robots_path is defined %}
     location /robots.txt {
@@ -134,22 +121,9 @@ server {
     {% endif %}
     {% endif %}
     location / {
-    {% if use_daphne is defined and use_daphne==true %}
-        proxy_pass http://unix:/tmp/{{ app_name }}.sock:/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-
-        proxy_redirect     off;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Host $server_name;
-    {% else %} 
         uwsgi_pass  unix:///tmp/{{ app_name }}.sock;
         include     uwsgi_params;
         {% if nginx_timeout is defined %}uwsgi_read_timeout  {{ nginx_timeout }};{% endif %}
-    {% endif %}
     }
     {% if robots_path is defined %}
     location /robots.txt {
