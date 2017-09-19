@@ -46,15 +46,15 @@
   tags:
     - update_env
 
-- name: Install npm requirements
-  command: bash -lc "yarn"
-  args:
-    chdir: "/home/ubuntu/{{ app_name }}"
-
-# - name: Install npm requirements(until yarn is stable)
-#   command: bash -lc "npm install"
+# - name: Install npm requirements
+#   command: bash -lc "yarn"
 #   args:
 #     chdir: "/home/ubuntu/{{ app_name }}"
+
+- name: Install npm requirements(until yarn is stable)
+  command: bash -lc "npm install"
+  args:
+    chdir: "/home/ubuntu/{{ app_name }}"
 
 - name: Check that bower.json exists
   stat:
