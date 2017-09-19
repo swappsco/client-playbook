@@ -1,0 +1,27 @@
+server {
+    listen 80;
+    listen [::]:80 default_server ipv6only=on;
+
+    root /usr/share/nginx/www;
+    index index.html index.htm;
+
+    server_name default;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+
+# HTTPS server
+#
+#server {
+#    listen 443 default_server;
+#    server_name default;
+#    root /usr/share/nginx/www;
+#    index index.html index.htm;
+#    ssl on;
+#
+#    location / {
+#        try_files $uri $uri/ =404;
+#    }
+#}

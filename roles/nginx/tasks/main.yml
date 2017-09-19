@@ -44,7 +44,7 @@
 - name: Update upstart scripts
   become: yes
   copy:
-    src: config_files/nginx_upstart
+    src: config_files/nginx/nginx_upstart
     dest: /etc/init.d/nginx
   when: use_pagespeed
   notify:
@@ -53,7 +53,7 @@
 - name: Update upstart scripts (2)
   become: yes
   copy:
-    src: config_files/nginx_upstart_2
+    src: config_files/nginx/nginx_upstart_2
     dest: /etc/init/nginx.conf
   when: use_pagespeed
   notify:
@@ -71,7 +71,7 @@
 - name: Copy Default nginx config file
   become: yes
   copy:
-    src: config_files/nginx_default
+    src: config_files/nginx/nginx_default
     dest: /etc/nginx/sites-available/default
   tags:
     - nginx
@@ -79,7 +79,7 @@
 - name: Copy nginx config file
   become: yes
   template:
-    src: config_files/nginx
+    src: config_files/nginx/nginx
     dest: /etc/nginx/sites-available/{{ app_name }}
   when: nginx_conf is undefined
   notify:

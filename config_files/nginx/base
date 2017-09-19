@@ -1,0 +1,164 @@
+{% if server_alias is defined %}
+{% set server_alias_list = server_alias.split(',') %}
+{% endif %}
+
+{% if redirect_urls is defined %}
+{% set redirect_urls_list = redirect_urls.split(',') %}
+{% endif %}
+
+{# Handle Redirects #}
+{% block redirects %}
+{% if redirect_urls is defined %}
+{# Redirect domains defined at redirect_urls #}
+# {{ app_name }}
+# server_name: {{ server_name }}
+{% if server_alias is defined %}# server_alias: {{ server_alias }}{% endif %}
+{% if redirect_urls is defined %}# redirect_urls: {{ redirect_urls }}{% endif %}
+
+server {
+    listen 443 ssl {% if use_http2 is defined %}http2{% endif %};
+    server_name {% for domain in redirect_urls_list %} {{ domain }}{% endfor %};
+
+    # SSL
+    ssl on;
+    {% if ssl_certificate is defined %}
+    ssl_certificate {{ ssl_certificate }};
+    ssl_certificate_key {{ ssl_key }};
+    {% elif use_letsencrypt is defined %}
+    ssl_certificate /etc/letsencrypt/live/{{ server_name }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ server_name }}/privkey.pem;
+    {% else %}
+    ssl_certificate /etc/nginx/cert/swappsio.crt;
+    ssl_certificate_key /etc/nginx/cert/swappsio.key;
+    {% endif %}
+    rewrite  ^/(.*)$  https://{{ server_name }}/$1 {% if redirect_type is defined %}{{ redirect_type }}{% else %}redirect{% endif %};
+
+}
+server {
+    listen 80;    
+    server_name{% for domain in redirect_urls_list %} {{ domain }}{% endfor %};
+    rewrite  ^/(.*)$  http://{{ server_name }}/$1 {% if redirect_type is defined %}{{ redirect_type }}{% else %}redirect{% endif %};
+
+}
+{% endif %}
+{% endblock %}
+{# Section to Serve the Site #}
+{% block server_site %}   
+{% if ssl_redirect is defined %}
+{# Redirect to https any request #}
+server {
+    listen 80;
+    {% if behind_load_balancer is not defined %}
+    server_name {{ server_name }}{% if server_alias is defined %} {% for domain in server_alias_list %} {{ domain }}{% endfor %}{% endif %};
+    {% else %}
+    server_name default;
+    {% endif %}
+    return {{ ssl_redirect }} https://$host$request_uri;
+}
+{% else %}
+{# Don't redirect. Serve via HTTP #}
+server {
+    {% if behind_load_balancer is not defined %}
+    server_name {{ server_name }}{% if server_alias is defined %} {% for domain in server_alias_list %} {{ domain }}{% endfor %}{% endif %};
+    {% else %}
+    server_name default;
+    {% endif %}
+    listen 80;
+    access_log /var/log/nginx/{{ app_name }}.access.log;
+    error_log /var/log/nginx/{{ app_name }}.error.log;
+    location / {
+    {% if use_daphne==true %}
+        proxy_pass http://unix:/tmp/{{ app_name }}.sock:/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_redirect     off;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Host $server_name;
+    {% else %} 
+        uwsgi_pass  unix:///tmp/{{ app_name }}.sock;
+        include     uwsgi_params;
+        {% if nginx_timeout is defined %}uwsgi_read_timeout  {{ nginx_timeout }};{% endif %}
+    {% endif %}
+    }
+    {% if robots_path is defined %}
+    location /robots.txt {
+        alias /srv/apps/{{ app_name }}/robots.txt;
+    }
+    {% endif %}
+    location /.well-known/acme-challenge/ {
+        alias /var/www/html/.well-known/acme-challenge/; 
+    }
+}
+{% endif %}
+{% endblock %}
+
+{# Serve via HTTPS #}
+{% block https %}
+server {
+    {% if use_pagespeed %}
+        pagespeed on;
+        pagespeed FileCachePath /var/nginx_pagespeed_cache;
+        pagespeed XHeaderValue "Powered By ngx_pagespeed";
+        location ~ "\.pagespeed\.([a-z]\.)?[a-z]{2}\.[^.]{10}\.[^.]+" {
+            add_header "" "";
+        }
+        location ~ "^/pagespeed_static/" { }
+        location ~ "^/ngx_pagespeed_beacon$" { }
+    {% endif %}
+
+    client_max_body_size 4m;
+    listen 443 ssl {% if use_http2 is defined %}http2{% endif %};
+    access_log /var/log/nginx/{{ app_name }}.access.log;
+    error_log /var/log/nginx/{{ app_name }}.error.log;
+
+    {% if behind_load_balancer is not defined %}
+    server_name {{ server_name }}{% if server_alias is defined %}{% for domain in server_alias_list %} {{ domain }}{% endfor %}{% endif %};
+    {% else %}
+    server_name default;
+    {% endif %}
+    {% if behind_load_balancer is not defined %}
+    ssl on;
+    {% if ssl_certificate is defined %}
+    ssl_certificate {{ ssl_certificate }};
+    ssl_certificate_key {{ ssl_key }};
+    {% elif use_letsencrypt is defined %}
+    ssl_certificate /etc/letsencrypt/live/{{ server_name }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ server_name }}/privkey.pem;
+    {% else %}
+    ssl_certificate /etc/nginx/cert/swappsio.crt;
+    ssl_certificate_key /etc/nginx/cert/swappsio.key;
+    {% endif %}
+    {% endif %}
+    location / {
+    {% if use_daphne==true %}
+        proxy_pass http://unix:/tmp/{{ app_name }}.sock:/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_redirect     off;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Host $server_name;
+    {% else %} 
+        uwsgi_pass  unix:///tmp/{{ app_name }}.sock;
+        include     uwsgi_params;
+        {% if nginx_timeout is defined %}uwsgi_read_timeout  {{ nginx_timeout }};{% endif %}
+    {% endif %}
+    }
+    {% if robots_path is defined %}
+    location /robots.txt {
+        alias /srv/apps/{{ app_name }}/robots.txt;
+    }
+    {% endif %}
+    location /.well-known/acme-challenge/{
+        autoindex on;
+        root /var/www/html/; 
+    }
+}
+{% endblock %}

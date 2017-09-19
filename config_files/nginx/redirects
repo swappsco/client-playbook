@@ -1,0 +1,24 @@
+server {
+    listen 443;    
+    server_name {% for domain in redirect_urls_list %} {{ domain }}{% endfor %};
+
+    ssl on;
+    {% if ssl_certificate is defined %}
+    ssl_certificate {{ ssl_certificate }};
+    ssl_certificate_key {{ ssl_key }};
+    {% elif use_letsencrypt is defined %}
+    ssl_certificate /etc/letsencrypt/live/{{ server_name }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ server_name }}/privkey.pem;
+    {% else %}
+    ssl_certificate /etc/nginx/cert/swappsio.crt;
+    ssl_certificate_key /etc/nginx/cert/swappsio.key;
+    {% endif %}
+    rewrite  ^/(.*)$  https://{{ server_name }}/$1 {% if redirect_type is defined %}{{ redirect_type }}{% else %}redirect{% endif %};
+
+}
+server {
+    listen 80;    
+    server_name{% for domain in redirect_urls_list %} {{ domain }}{% endfor %};
+    rewrite  ^/(.*)$  http://{{ server_name }}/$1 {% if redirect_type is defined %}{{ redirect_type }}{% else %}redirect{% endif %};
+
+}
