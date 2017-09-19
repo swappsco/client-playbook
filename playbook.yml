@@ -41,13 +41,13 @@
         create: yes
 
     - name: Install node  
-      command: bash -lc "nvm install 7"
+      command: bash -lc "nvm install 8"
 
-    # - name: Install yarn
-    #   command: bash -lc "npm install -g yarn@0.18.1"
+    - name: Install yarn
+      command: bash -lc "npm install -g yarn@1.*"
 
-    # - name: Install bower
-    #   command: bash -lc "npm install -g bower"
+    - name: Install bower
+      command: bash -lc "npm install -g bower"
 
     - name: Clone repository
       git:
@@ -59,31 +59,31 @@
         force: yes
         update: yes
 
-    #- name: Install npm requirements
-    #  command: bash -lc "yarn"
-    #  args:
-    #    chdir: "/home/ubuntu/{{ app_name }}"
+    - name: Install npm requirements
+      command: bash -lc "yarn"
+      args:
+        chdir: "/home/ubuntu/{{ app_name }}"
 
     # - name: Install npm requirements(until yarn is stable)
     #   command: bash -lc "npm install"
     #   args:
     #     chdir: "/home/ubuntu/{{ app_name }}"
 
-    # - name: Check that bower.json exists
-    #   stat:
-    #     path: "/home/ubuntu/{{ app_name }}/bower.json"
-    #   register: bower_stats
+    - name: Check that bower.json exists
+      stat:
+        path: "/home/ubuntu/{{ app_name }}/bower.json"
+      register: bower_stats
 
-    # - name: Install bower requirements
-    #   command: bash -lc "bower install"
-    #   args:
-    #     chdir: "/home/ubuntu/{{ app_name }}"
-    #   when: bower_stats.stat.exists == True
+    - name: Install bower requirements
+      command: bash -lc "bower install"
+      args:
+        chdir: "/home/ubuntu/{{ app_name }}"
+      when: bower_stats.stat.exists == True
 
-    # - name: Trigger build
-    #   command: bash -lc "npm run-script prepare-to-deploy"
-    #   args:
-    #     chdir: "/home/ubuntu/{{ app_name }}"
+    - name: Trigger build
+      command: bash -lc "npm run build"
+      args:
+        chdir: "/home/ubuntu/{{ app_name }}"
 
     - name: Copy SSL files
       become: yes
@@ -123,7 +123,7 @@
       - Restart nginx
 
     - name: Copy app
-      command: bash -lc "cp -r /home/ubuntu/{{ app_name }}/dist/* /srv/apps/{{ app_name }}"
+      command: bash -lc "cp -r /home/ubuntu/{{ app_name }}/build/* /srv/apps/{{ app_name }}"
       become: yes
 
     - name: Change app permissions
