@@ -1,15 +1,80 @@
 ---
-- name: Copy SSL files
+- name: Install default nginx
+  become: yes
+  apt: name=nginx state=present
+  when: not use_pagespeed
+
+- name: Remove default nginx
+  become: yes
+  apt: name=nginx state=absent
+  when: use_pagespeed
+
+- name: Autoremove apt packages
+  become: yes
+  command: apt-get autoremove -y
+
+- name: Detect if file exists
+  stat:
+    path: /usr/share/nginx/sbin/nginx
+  register: compiled_nginx
+
+- name: Unmask nginx.service...just in case
+  become: yes
+  command: systemctl unmask nginx.service
+  when: use_pagespeed
+
+- name: Download pagespeed install script
+  get_url:
+    url: https://ngxpagespeed.com/install
+    dest: /home/ubuntu/install.sh
+    mode: u+rwx
+  when:
+    - use_pagespeed
+    - compiled_nginx.stat.exists == False
+
+- name: Install nginx with pagespeed module
+  become: yes
+  shell: /home/ubuntu/install.sh -n latest -y -a '--with-cc-opt="-g -O2 -fPIE -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2" --with-ld-opt="-Wl,-Bsymbolic-functions -fPIE -pie -Wl,-z,relro -Wl,-z,now" --prefix=/usr/share/nginx --conf-path=/etc/nginx/nginx.conf --http-log-path=/var/log/nginx/access.log --error-log-path=/var/log/nginx/error.log --lock-path=/var/lock/nginx.lock --pid-path=/run/nginx.pid --http-client-body-temp-path=/var/lib/nginx/body --http-fastcgi-temp-path=/var/lib/nginx/fastcgi --http-proxy-temp-path=/var/lib/nginx/proxy --http-scgi-temp-path=/var/lib/nginx/scgi --http-uwsgi-temp-path=/var/lib/nginx/uwsgi --with-pcre-jit --with-ipv6 --with-http_ssl_module --with-http_stub_status_module --with-http_realip_module --with-http_auth_request_module --with-http_addition_module --with-http_dav_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_v2_module --with-http_sub_module --with-http_xslt_module --with-stream --with-stream_ssl_module --with-mail --with-mail_ssl_module --with-threads'
+  when:
+    - use_pagespeed
+    - compiled_nginx.stat.exists == False
+  notify:
+  - Restart nginx
+
+- name: Update upstart scripts
   become: yes
   copy:
-    src: ~/Dropbox/ops/ssl/
-    dest: /etc/nginx/cert/
+    src: config_files/nginx_upstart
+    dest: /etc/init.d/nginx
+  when: use_pagespeed
+  notify:
+  - Restart nginx
+
+- name: Update upstart scripts (2)
+  become: yes
+  copy:
+    src: config_files/nginx_upstart_2
+    dest: /etc/init/nginx.conf
+  when: use_pagespeed
+  notify:
+  - Restart nginx
+
+- name: Make sure that pagespeed cache folder exists
+  become: yes
+  file:
+    path: /var/nginx_pagespeed_cache
+    state: directory
+    owner: www-data
+    group: www-data
+  when: use_pagespeed
 
 - name: Copy Default nginx config file
   become: yes
   copy:
     src: config_files/nginx_default
     dest: /etc/nginx/sites-available/default
+  tags:
+    - nginx
 
 - name: Copy nginx config file
   become: yes
@@ -19,6 +84,19 @@
   when: nginx_conf is undefined
   notify:
   - Restart nginx
+  tags:
+    - nginx
+
+- name: Copy specific nginx config file
+  become: yes
+  template:
+    src: "{{ nginx_conf }}"
+    dest: /etc/nginx/sites-available/{{ app_name }}
+  when: nginx_conf is defined
+  notify:
+  - Restart nginx
+  tags:
+    - nginx
 
 - name: Create symlink for nginx default
   become: yes
@@ -26,6 +104,8 @@
     src: /etc/nginx/sites-available/default
     dest: /etc/nginx/sites-enabled/default
     state: link
+  tags:
+    - nginx
 
 - name: Create symlink for nginx
   become: yes
@@ -35,3 +115,5 @@
     state: link
   notify:
   - Restart nginx
+  tags:
+    - nginx

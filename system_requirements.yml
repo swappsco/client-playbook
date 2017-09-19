@@ -10,3 +10,8 @@ system_requirements:
 
 # Nginx
 - nginx
+- libpcre3
+- libpcre3-dev
+- libxml2-dev
+- libxslt1-dev
+- python-dev
