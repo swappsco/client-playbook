@@ -68,12 +68,12 @@
   when: bower_stats.stat.exists == True
 
 - name: Trigger build
-  command: bash -lc "npm run build"
+  command: bash -lc "npm run {% if build_task is undefined %}build{% else %}{{build_task}}{% endif %}"
   args:
     chdir: "/home/ubuntu/{{ app_name }}"
 
 - name: Copy app
-  command: bash -lc "cp -r /home/ubuntu/{{ app_name }}/build/* /srv/apps/{{ app_name }}"
+  command: bash -lc "cp -r /home/ubuntu/{{ app_name }}/{% if build_directory is undefined %}build{% else %}{{build_directory}}{% endif %}/* /srv/apps/{{ app_name }}"
   become: yes
 
 - name: Change app permissions
