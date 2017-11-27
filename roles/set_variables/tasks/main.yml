@@ -1,0 +1,6 @@
+---
+- set_fact: use_yarn=True
+  when: use_yarn is undefined
+
+- set_fact: use_yarn={{ use_yarn|bool }}
+  when: use_yarn is defined

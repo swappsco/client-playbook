@@ -3,6 +3,7 @@
 - hosts: all
 
   roles:
+    - set_variables
     - build_essential
     - setup_app
     - nginx
