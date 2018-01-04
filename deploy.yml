@@ -6,5 +6,5 @@
     - set_variables
     - build_essential
     - setup_app
-    - nginx
+    - { role: nginx, when: use_nginx is defined and use_nginx | bool }
     - { role: letsencrypt, when: use_letsencrypt is defined and use_letsencrypt | bool }

@@ -4,3 +4,9 @@
 
 - set_fact: use_yarn={{ use_yarn|bool }}
   when: use_yarn is defined
+
+- set_fact: use_nginx=True
+  when: use_nginx is undefined
+
+- set_fact: use_nginx={{ use_nginx|bool }}
+  when: use_nginx is defined
