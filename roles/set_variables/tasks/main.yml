@@ -10,3 +10,9 @@
 
 - set_fact: use_nginx={{ use_nginx|bool }}
   when: use_nginx is defined
+
+- set_fact: pure_html=False
+  when: pure_html is undefined
+
+- set_fact: pure_html={{ pure_html|bool }}
+  when: pure_html is defined
