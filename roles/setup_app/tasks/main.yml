@@ -33,6 +33,10 @@
   command: bash -lc "npm install -g bower"
   when: not pure_html
 
+- name: Change owner to {{ ansible_ssh_user }}
+  become: yes
+  command: chown -R {{ ansible_ssh_user }}:{{ ansible_ssh_user }} /srv/apps/{{ app_name }}
+
 - name: Clone repository
   git:
     repo: "{{ repo_url }}"
