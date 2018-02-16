@@ -22,3 +22,13 @@
   become: yes
   apt: name={{ item }} state=present
   with_items: "{{ system_requirements }}"
+
+- name: add somaxconn
+  become: yes
+  command: sysctl -w net.core.somaxconn=1024
+
+- name: add somaxconn to sysctl to make it permanent
+  become: yes
+  lineinfile:
+    name: /etc/sysctl.conf
+    line: 'net.core.somaxconn=1024'
