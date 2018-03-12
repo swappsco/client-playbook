@@ -8,29 +8,31 @@
     group: ubuntu
 
 - name: Install nvm
-  git:
+  local_action:
+    module: git
     repo: https://github.com/creationix/nvm.git
     dest: ~/.nvm
     version: v0.32.0
   when: not pure_html
 
 - name: Source nvm in ~/.profile
-  lineinfile:
-    dest: ~/.profile
+  local_action:
+    module: lineinfile
+    dest: "~/.profile"
     line: "source ~/.nvm/nvm.sh"
     create: yes
   when: not pure_html
 
-- name: Install node  
-  command: bash -lc "nvm install 8"
+- name: Install node
+  local_action: command bash -lc "nvm install 8"
   when: not pure_html
 
 - name: Install yarn
-  command: bash -lc "npm install -g yarn@1.*"
+  local_action: command bash -lc "npm install -g yarn@1.*"
   when: not pure_html and use_yarn
 
 - name: Install bower
-  command: bash -lc "npm install -g bower"
+  local_action: command bash -lc "npm install -g bower"
   when: not pure_html
 
 - name: Change owner to {{ ansible_ssh_user }}
@@ -38,9 +40,10 @@
   command: chown -R {{ ansible_ssh_user }}:{{ ansible_ssh_user }} /srv/apps/{{ app_name }}
 
 - name: Clone repository
-  git:
+  local_action:
+    module: git
     repo: "{{ repo_url }}"
-    dest: "~/{{ app_name }}"
+    dest: "/tmp/{{ app_name }}"
     key_file: /home/ubuntu/.ssh/deployment
     accept_hostkey: yes
     version: "{{ repo_tag }}"
@@ -60,44 +63,48 @@
   when: pure_html
 
 - name: Copy application config file specified by env_source
-  copy:
+  local_action:
+    module: copy
     src: "{{ env_source }}"
-    dest: ~/{{ app_name }}/.env.production
+    dest: /tmp/{{ app_name }}/.env.production
   when: env_source is defined
   tags:
     - update_env
 
 - name: Install npm requirements using yarn
-  command: bash -lc "yarn"
+  local_action: command bash -lc "yarn"
   args:
-    chdir: "/home/ubuntu/{{ app_name }}"
+    chdir: "/tmp/{{ app_name }}"
   when: not pure_html and use_yarn
 
 - name: Install npm requirements without yarn
-  command: bash -lc "npm install"
+  local_action: command bash -lc "npm install"
   args:
-    chdir: "/home/ubuntu/{{ app_name }}"
+    chdir: "/tmp/{{ app_name }}"
   when: not pure_html and not use_yarn
 
 - name: Check that bower.json exists
-  stat:
-    path: "/home/ubuntu/{{ app_name }}/bower.json"
+  local_action:
+    module: stat
+    path: "/tmp/{{ app_name }}/bower.json"
   register: bower_stats
 
 - name: Install bower requirements
-  command: bash -lc "bower install"
+  local_action: command bash -lc "bower install"
   args:
-    chdir: "/home/ubuntu/{{ app_name }}"
+    chdir: "/tmp/{{ app_name }}"
   when: bower_stats.stat.exists == True
 
 - name: Trigger build
-  command: bash -lc "npm run {% if build_task is undefined %}build{% else %}{{build_task}}{% endif %}"
+  local_action: command bash -lc "npm run {% if build_task is undefined %}build{% else %}{{build_task}}{% endif %}"
   args:
-    chdir: "/home/ubuntu/{{ app_name }}"
+    chdir: "/tmp/{{ app_name }}"
   when: not pure_html
 
 - name: Copy app
-  command: bash -lc "cp -r /home/ubuntu/{{ app_name }}/{% if build_directory is undefined %}build{% else %}{{build_directory}}{% endif %}/* /srv/apps/{{ app_name }}"
+  copy:
+    src: "/tmp/{{ app_name }}/{% if build_directory is undefined %}build{% else %}{{build_directory}}{% endif %}/"
+    dest: /srv/apps/{{ app_name}}/
   become: yes
   when: not pure_html
 
@@ -109,3 +116,10 @@
     owner: www-data
     group: www-data
     recurse: yes
+
+
+- name: Delete temporal path
+  local_action:
+    module: file
+    path: /tmp/{{ app_name}}
+    state: absent
