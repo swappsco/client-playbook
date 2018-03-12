@@ -44,7 +44,7 @@
     module: git
     repo: "{{ repo_url }}"
     dest: "/tmp/{{ app_name }}"
-    key_file: /home/ubuntu/.ssh/deployment
+    key_file: ~/.ssh/deployment
     accept_hostkey: yes
     version: "{{ repo_tag }}"
     force: yes
